@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Mirror of Truth</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+  <style>
+    body {
+      background: linear-gradient(to right, #1d2b64, #f8cdda);
+      color: #ffffff;
+      text-align: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-top: 40px;
+      color: #ffe600;
+      text-shadow: 2px 2px #000;
+    }
+    #video {
+      margin-top: 20px;
+      border: 8px solid #fff;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+    #status {
+      margin-top: 30px;
+      font-size: 1.8rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 10px 20px;
+      border-radius: 10px;
+      backdrop-filter: blur(6px);
+    }
+    .emotion {
+      font-size: 2.5rem;
+      color: #00ffd5;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .suggestion {
+      margin-top: 15px;
+      font-style: italic;
+      font-size: 1.2rem;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 12px 25px;
+      border-radius: 12px;
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(4px);
+      max-width: 90%;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎭 AI Mirror of Truth</h1>
+  <video id="video" width="480" height="360" autoplay muted></video>
+  <div id="status">Loading model...</div>
+  <div id="suggestion"></div>
+  <script>
+    const video = document.getElementById('video');
+    const suggestionBox = document.getElementById('suggestion');
+    const emotionTips = {
+      happy: "Keep smiling! You're doing great! 🌞",
+      sad: "Take a short break and breathe deeply. 🌧️",
+      angry: "Try calming music or take a walk. 🔥",
+      surprised: "Something unexpected? Stay curious! 😲",
+      fearful: "It’s okay to pause. You’ve got this! 🧘‍♀️",
+      disgusted: "Refocus and refresh your mind. 💧",
+      neutral: "Steady mindset. Keep going! ⏳"
+    };
+    async function startVideo() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+        video.srcObject = stream;
+      } catch (err) {
+        document.getElementById('status').innerText = 'Camera access denied.';
+      }
+    }
+    async function loadModels() {
+      await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+      await faceapi.nets.faceExpressionNet.loadFromUri('/models');
+      document.getElementById('status').innerText = 'Model loaded. Starting...';
+      startVideo();
+    }
+    video.addEventListener('play', () => {
+      const canvas = faceapi.createCanvasFromMedia(video);
+      document.body.append(canvas);
+      const displaySize = { width: video.width, height: video.height };
+      faceapi.matchDimensions(canvas, displaySize);
+      setInterval(async () => {
+        const detections = await faceapi
+          .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+          .withFaceExpressions();
+        const resizedDetections = faceapi.resizeResults(detections, displaySize);
+        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        faceapi.draw.drawDetections(canvas, resizedDetections);
+        faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
+        if (detections.length > 0) {
+          const expr = detections[0].expressions;
+          const sorted = Object.entries(expr).sort((a, b) => b[1] - a[1]);
+          const topEmotion = sorted[0][0];
+          document.getElementById('status').innerHTML =
+            `<div class="emotion">😃 Emotion: <b>${topEmotion.toUpperCase()}</b></div>`;
+          const tip = emotionTips[topEmotion] || "Stay mindful and keep going!";
+          suggestionBox.innerHTML = `<div class='suggestion'>💡 Tip: ${tip}</div>`;
+        } else {
+          document.getElementById('status').innerText = 'No face detected';
+          suggestionBox.innerHTML = '';
+        }
+      }, 1000);
+    });
+    loadModels();
+  </script>
+</body>
+</html>

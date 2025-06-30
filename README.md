@@ -1,1 +1,1 @@
-🪞 AI Mirror of Truth — Not just your face, your feelings. This AI-powered mirror uses your webcam to detect emotions in real-time (happy, sad, angry, etc.) and gives you mood-matching tips 💬 Built with HTML, CSS, JS & face-api.js — no backend, just pure browser magic! ✨
+
